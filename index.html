@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pemrosesan Gambar dan Audio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Aplikasi Pemrosesan Gambar dan Audio</h1>
+
+    <section id="resize-image">
+        <h2>Resize Gambar</h2>
+        <form id="resize-form" enctype="multipart/form-data">
+            <label for="imageInput">Pilih Gambar:</label>
+            <input type="file" id="imageInput" accept="image/*">
+            <br>
+            <label for="widthInput">Lebar (piksel):</label>
+            <input type="number" id="widthInput" min="1" required>
+            <br>
+            <label for="heightInput">Tinggi (piksel):</label>
+            <input type="number" id="heightInput" min="1" required>
+            <br>
+            <button type="button" onclick="resizeImage()">Resize</button>
+            <div id="imagePreview"></div>
+                <a id="downloadButton" style="display: none;">Download Resized Image</a>
+
+                <script src="https://cdn.jsdelivr.net/npm/pica/dist/pica.min.js"></script>
+                <script src="script.js"></script>
+        </form>
+    </section>
+
+   <section id="compress-audio">
+        <h2>Compress Audio</h2>
+        <form id="compress-form" enctype="multipart/form-data">
+            <label for="audio-input">Pilih File Audio:</label>
+            <input type="file" id="audio-input" accept="audio/*">
+            <br>
+            <button type="button" id="compress-button">Compress</button>
+            <div id="audio-result"></div>
+        </form>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/lamejs/lame.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Your JavaScript code goes here
+        // Paste the provided JavaScript code here
+        var audioInput = document.getElementById("audio-input");
+        var compressButton = document.getElementById("compress-button");
+        var audioResultDiv = document.getElementById("audio-result");
+
+        compressButton.addEventListener("click", function() {
+            var file = audioInput.files[0];
+
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var audioData = e.target.result;
+
+                    // Membuat instance baru dari encoder MP3
+                    var mp3Encoder = new lamejs.Mp3Encoder(1, 44100, 128);
+
+                    // Mengkonversi data audio ke sampel PCM
+                    var samples = new Int16Array(audioData);
+                    var sampleRate = 44100;
+                    var leftChannel = [];
+                    for (var i = 0; i < samples.length; i++) {
+                        leftChannel.push(samples[i]);
+                    }
+
+                    // Mengodekan sampel PCM menjadi format MP3
+                    var mp3Data = mp3Encoder.encodeBuffer(leftChannel);
+
+                    // Menyelesaikan proses pengodean MP3
+                    var finalMp3Data = mp3Encoder.flush();
+
+                    // Menggabungkan data MP3
+                    var combinedData = new Int8Array(mp3Data.length + finalMp3Data.length);
+                    combinedData.set(mp3Data);
+                    combinedData.set(finalMp3Data, mp3Data.length);
+
+                    // Membuat Blob dari data MP3 yang telah digabungkan
+                    var compressedBlob = new Blob([combinedData.buffer], { type: 'audio/mp3' });
+
+                    // Membuat URL untuk Blob audio yang telah dikompres
+                    var compressedUrl = URL.createObjectURL(compressedBlob);
+
+                    // Membuat elemen audio untuk memutar audio yang telah dikompres
+                    var audioElement = document.createElement('audio');
+                    audioElement.src = compressedUrl;
+                    audioElement.controls = true;
+
+                    // Menghapus hasil audio sebelumnya
+                    audioResultDiv.innerHTML = "";
+
+                    // Menambahkan elemen audio ke dalam div hasil audio
+                    audioResultDiv.appendChild(audioElement);
+
+                    // Membuat elemen anchor dengan atribut download
+                    var downloadLink = document.createElement('a');
+                    downloadLink.href = compressedUrl;
+                    downloadLink.download = 'compressed_audio.mp3';
+
+                    // Memicu event klik pada elemen anchor
+                    downloadLink.click();
+
+                    // Membersihkan URL dan elemen anchor
+                    URL.revokeObjectURL(compressedUrl);
+                    downloadLink.remove();
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+</script>
+    </script>
+</body>
+</html>
